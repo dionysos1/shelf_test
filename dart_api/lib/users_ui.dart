@@ -16,72 +16,6 @@ Router usersUiRouter() {
   return router;
 }
 
-Response _serveHtml(Request request) {
-  const html = '''
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Users CRUD</title>
-  <link href="https://unpkg.com/tabulator-tables@5.6.1/dist/css/tabulator.min.css" rel="stylesheet">
-  <script src="https://unpkg.com/tabulator-tables@5.6.1/dist/js/tabulator.min.js"></script>
-</head>
-<body>
-  <h2>Users</h2>
-  <div id="user-table"></div>
-
-  <script>
-    const table = new Tabulator("#user-table", {
-      height: "400px",
-      layout: "fitColumns",
-      ajaxURL: "/api/users",
-      ajaxConfig: "GET",
-      columns: [
-        { title: "ID", field: "id", width: 50, editor: false },
-        { title: "Name", field: "name", editor: "input" },
-        {
-          title: "Actions",
-          formatter: () => "<button>❌</button>",
-          width: 70,
-          cellClick: function(e, cell) {
-            const data = cell.getRow().getData();
-            fetch("/api/users", {
-              method: "DELETE",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ id: data.id }),
-            }).then(() => table.replaceData());
-          }
-        },
-      ],
-      cellEdited: function(cell) {
-        const data = cell.getRow().getData();
-        fetch("/api/users", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-      }
-    });
-
-    const addBtn = document.createElement("button");
-    addBtn.textContent = "➕ Add User";
-    addBtn.onclick = () => {
-      const name = prompt("Enter new user name:");
-      if (name) {
-        fetch("/api/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name }),
-        }).then(() => table.replaceData());
-      }
-    };
-    document.body.insertBefore(addBtn, document.getElementById("user-table"));
-  </script>
-</body>
-</html>
-''';
-  return Response.ok(html, headers: {'Content-Type': 'text/html'});
-}
-
 Future<Response> _getUsers(Request request) async {
   final users = await Db.query('SELECT id, name FROM users ORDER BY id');
   return Response.ok(jsonEncode(users), headers: {
@@ -130,4 +64,70 @@ Future<Response> _deleteUser(Request request) async {
     parameters: {'id': id},
   );
   return Response.ok('OK');
+}
+
+
+Response _serveHtml(Request request) {
+  const html = '''
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Users CRUD</title>
+  <link href="https://unpkg.com/tabulator-tables@5.6.1/dist/css/tabulator.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/tabulator-tables@5.6.1/dist/js/tabulator.min.js"></script>
+</head>
+<body>
+  <h2>Users</h2>
+  <div id="user-table"></div>
+
+  <script>
+    const table = new Tabulator("#user-table", {
+      layout: "fitColumns",
+      ajaxURL: "/api/users",
+      ajaxConfig: "GET",
+      columns: [
+        { title: "ID", field: "id", width: 50, editor: false },
+        { title: "Name", field: "name", editor: "input" },
+        {
+          title: "Actions",
+          formatter: () => "<button>❌</button>",
+          width: 70,
+          cellClick: function(e, cell) {
+            const data = cell.getRow().getData();
+            fetch("/api/users", {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: data.id }),
+            }).then(() => table.replaceData());
+          }
+        },
+      ],
+      cellEdited: function(cell) {
+        const data = cell.getRow().getData();
+        fetch("/api/users", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+      }
+    });
+
+    const addBtn = document.createElement("button");
+    addBtn.textContent = "➕ Add User";
+    addBtn.onclick = () => {
+      const name = prompt("Enter new user name:");
+      if (name) {
+        fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name }),
+        }).then(() => table.replaceData());
+      }
+    };
+    document.body.insertBefore(addBtn, document.getElementById("user-table"));
+  </script>
+</body>
+</html>
+''';
+  return Response.ok(html, headers: {'Content-Type': 'text/html'});
 }
