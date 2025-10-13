@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 import 'package:shelf/shelf.dart';
-import 'package:shelf_router/shelf_router.dart';
 import 'package:shelf/shelf_io.dart' as io;
 import 'package:http/http.dart' as http;
 
@@ -18,6 +18,7 @@ void main() {
 
     final handler = Pipeline()
         .addMiddleware(logRequests())
+        // ignore: implicit_call_tearoffs
         .addHandler(usersUiRouter());
 
     server = await io.serve(handler, 'localhost', 0);
@@ -50,5 +51,8 @@ void main() {
 
     final users = await Db.query("SELECT * FROM users WHERE name = '$name'");
     expect(users.any((u) => u['name'] == name), isTrue);
+
+    // Cleanup: delete the test user
+    await Db.raw.execute(Sql.named("DELETE FROM users WHERE name = '$name'"));
   });
 }
